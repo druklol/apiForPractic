@@ -7,11 +7,12 @@ import java.io.File
 class PatientService {
     fun getResolutionFileBySnils(snils:String): File? {
         val patientDirectory = findDirectoryBySnils(snils)
+        println(patientDirectory.absolutePath)
         return findFileByName(patientDirectory, "resolution.pdf")
     }
 
     private fun findDirectoryBySnils(snils: String): File {
-        return  File("/home/druk/IdeaProjects/api/src/main/resources/static/${snils}")
+        return  File("./src/main/resources/static/${snils}")
     }
 
     fun findFileByName(directory: File, fileName: String): File? {
