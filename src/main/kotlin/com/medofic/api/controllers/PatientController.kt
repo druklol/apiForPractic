@@ -1,10 +1,11 @@
 package com.medofic.api.controllers
 
+import com.medofic.api.data.classes.ProtokolFileTemp
 import com.medofic.api.services.PatientService
 import org.springframework.core.io.FileSystemResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -13,26 +14,58 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("api/v1/patient")
 class PatientController(private val patientService: PatientService) {
 
-    @GetMapping("/resolution")
+    @PostMapping("/resolution")
     fun getResolution(@RequestBody request: Map<String, String>): ResponseEntity<FileSystemResource> {
         val snils = request["snils"] ?: return ResponseEntity.badRequest().build()
         val resolutionFile = patientService.getResolutionFileBySnils(snils)
 
-        return if(resolutionFile?.exists() == true){
-            val resource = FileSystemResource(resolutionFile)
+        if(resolutionFile?.exists() != true){
+            return ResponseEntity.notFound().build()
+        }
+        val resource = FileSystemResource(resolutionFile)
 
-            val headers = HttpHeaders().apply {
-                add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${resolutionFile.name}")
-                add(HttpHeaders.CONTENT_TYPE, "application/pdf")
-            }
+        val headers = HttpHeaders().apply {
+            add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${resolutionFile.name}")
+            add(HttpHeaders.CONTENT_TYPE, "application/pdf")
+        }
 
-            ResponseEntity
+        return ResponseEntity
+            .ok()
+            .headers(headers)
+            .body(resource)
+    }
+
+    @PostMapping("/protocols")
+    fun getAllProtocols(@RequestBody request: Map<String,String>): ResponseEntity<MutableList<ProtokolFileTemp>> {
+        val snils = request["snils"] ?: return ResponseEntity.badRequest().build()
+        val protocols = patientService.getAllProtocolsBySnils(snils)
+
+        return ResponseEntity
                 .ok()
-                .headers(headers)
-                .body(resource)
+                .body(protocols)
+
+    }
+
+    @PostMapping("/protocol")
+    fun getProtocolByName(@RequestBody request: Map<String, String>): ResponseEntity<FileSystemResource> {
+        val snils = request["snils"] ?: return ResponseEntity.badRequest().build()
+        val fileName = request["fileName"] ?: return ResponseEntity.badRequest().build()
+
+        val protocol = patientService.getProtocolFile(snils, fileName)
+
+        if(protocol?.exists() != true){
+            return ResponseEntity.notFound().build()
         }
-        else {
-            ResponseEntity.notFound().build()
+        val headers = HttpHeaders().apply {
+            add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${protocol.name}")
+            add(HttpHeaders.CONTENT_TYPE, "application/pdf")
         }
+
+        val protocolFile = FileSystemResource(protocol)
+
+        return ResponseEntity
+            .ok()
+            .headers(headers)
+            .body(protocolFile)
     }
 }
