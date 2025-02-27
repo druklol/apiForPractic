@@ -1,6 +1,6 @@
 package com.medofic.api.controllers
 
-import com.medofic.api.data.classes.ProtokolFileTemp
+import com.medofic.api.data.classes.ProtocolFile
 import com.medofic.api.services.PatientService
 import org.springframework.core.io.FileSystemResource
 import org.springframework.http.HttpHeaders
@@ -35,8 +35,14 @@ class PatientController(private val patientService: PatientService) {
             .body(resource)
     }
 
-    @PostMapping("/protocols")
-    fun getAllProtocols(@RequestBody request: Map<String,String>): ResponseEntity<MutableList<ProtokolFileTemp>> {
+    /**
+     * Getting information about all available protocols in user directory
+     *
+     * @property request body from post request. Must contain snils(format: ddd ddd ddd dd)
+     * @return list with all available protocols
+    */
+    @PostMapping("/listProtocols")
+    fun getAllProtocolsInfo(@RequestBody request: Map<String,String>): ResponseEntity<MutableList<ProtocolFile>> {
         val snils = request["snils"] ?: return ResponseEntity.badRequest().build()
         val protocols = patientService.getAllProtocolsBySnils(snils)
 
@@ -46,6 +52,12 @@ class PatientController(private val patientService: PatientService) {
 
     }
 
+    /**
+     * Get a specific protocol in user directory
+     *
+     * @property request body from post request. Must contain snils(format: ddd ddd ddd dd) and fileName
+     * @return file - protocol
+     */
     @PostMapping("/protocol")
     fun getProtocolByName(@RequestBody request: Map<String, String>): ResponseEntity<FileSystemResource> {
         val snils = request["snils"] ?: return ResponseEntity.badRequest().build()

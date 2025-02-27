@@ -1,7 +1,7 @@
 package com.medofic.api.services
 
-import com.medofic.api.data.classes.ProtokolFileTemp
-import com.medofic.api.data.classes.ProtokolInfoTemp
+import com.medofic.api.data.classes.ProtocolFile
+import com.medofic.api.data.classes.ProtocolInfo
 import org.springframework.stereotype.Service
 import java.io.File
 import java.util.*
@@ -20,17 +20,17 @@ class PatientService {
         return findFileByName(patientDirectory, fileName)
     }
 
-    fun getAllProtocolsBySnils(snils:String): MutableList<ProtokolFileTemp> {
+    fun getAllProtocolsBySnils(snils:String): MutableList<ProtocolFile> {
         val files = findDirectoryBySnils(snils,"protocols").listFiles()
-        val protocols:MutableList<ProtokolFileTemp> = mutableListOf()
+        val protocols:MutableList<ProtocolFile> = mutableListOf()
 
         files.forEach { file->
             if(file.name.startsWith("."))
                 return@forEach
 
             val name=file.name.split("_")
-            val protocolInfo = ProtokolInfoTemp(name[0],name[1], Date(),name[3])
-            val protocolFile = ProtokolFileTemp(file.name, protocolInfo)
+            val protocolInfo = ProtocolInfo(name[0],name[1], Date(),name[3])
+            val protocolFile = ProtocolFile(file.name, protocolInfo)
 
             protocols.add(protocolFile)
         }
