@@ -18,17 +18,18 @@ import java.io.File
 @RequestMapping("api/v1/patient")
 class PatientController(private val patientService: PatientService) {
 
-    private fun createPdfHeaders(resolutionFile:File) = HttpHeaders().apply {
+    private fun createPdfHeaders(resolutionFile: File) = HttpHeaders().apply {
         add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${resolutionFile.name}")
         add(HttpHeaders.CONTENT_TYPE, "application/pdf")
     }
 
+    @Operation(summary = "Not used")
     @PostMapping("/resolution")
     fun getResolution(@RequestBody request: Map<String, String>): ResponseEntity<FileSystemResource> {
         val snils = request["snils"] ?: return ResponseEntity.badRequest().build()
         val resolutionFile = patientService.getResolutionFileBySnils(snils)
 
-        if(resolutionFile?.exists() != true){
+        if (resolutionFile?.exists() != true) {
             return ResponseEntity.notFound().build()
         }
         val resource = FileSystemResource(resolutionFile)
@@ -46,14 +47,18 @@ class PatientController(private val patientService: PatientService) {
      *
      * @property request body from post request. Must contain snils(format: ddd ddd ddd dd)
      * @return list with all available protocols
-    */
+     */
     @Operation(summary = "Gets info about all protocols")
     @PostMapping("/listProtocols")
-    fun getAllProtocolsInfo(@RequestBody request: ProtocolsRequest): ResponseEntity<MutableList<ProtocolFile>> {
+    fun getProtocolsInfo(@RequestBody request: ProtocolsRequest): ResponseEntity<MutableList<ProtocolFile>> {
         val protocols = patientService.getAllProtocolsBySnils(request.snils)
 
+        val start = (request.page * request.size).coerceAtMost(protocols.size)
+        val end = ((request.page + 1) * request.size).coerceAtMost(protocols.size)
+        val paginatedProtocols = protocols.subList(start, end)
+
         return ResponseEntity
-                .ok(protocols)
+            .ok(paginatedProtocols)
     }
 
     /**
