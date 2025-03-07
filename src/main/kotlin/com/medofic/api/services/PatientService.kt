@@ -1,7 +1,11 @@
 package com.medofic.api.services
 
+import com.medofic.api.data.classes.Appointment
+import com.medofic.api.data.classes.DTO.Requests.AppointmentRequest
 import com.medofic.api.data.classes.ProtocolFile
 import com.medofic.api.data.classes.ProtocolInfo
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.springframework.stereotype.Service
 import java.io.File
 import java.time.LocalDate
@@ -65,4 +69,25 @@ class PatientService {
         return null
     }
 
+    fun getAppointmentsBySnils(snils: String): List<Appointment> {
+        val directory = findDirectoryBySnils(snils, "")
+        val file = findFileByName(directory, "appointments.json")!!
+        val appointments = file.readText().ifEmpty { "[]" }.let {
+            Json.decodeFromString<List<Appointment>>(it)
+        }
+
+        return appointments
+    }
+
+    fun setAppointmentBySnils(snils: String, appointment: Appointment) {
+        val directory = findDirectoryBySnils(snils, "")
+        val file = findFileByName(directory, "appointments.json")!!
+
+        val json = file.readText().ifEmpty { "[]" }.let {
+            Json.decodeFromString<MutableList<Appointment>>(it)
+        }
+
+        json.add(appointment)
+        file.writeText(Json.encodeToString(json))
+    }
 }
