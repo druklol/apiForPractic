@@ -5,7 +5,7 @@ import com.medofic.api.data.classes.DTO.Requests.AppointmentForDoctorRequest
 import com.medofic.api.data.classes.DTO.Requests.AppointmentRequest
 import com.medofic.api.data.classes.DTO.Requests.ProtocolRequest
 import com.medofic.api.data.classes.DTO.Requests.ProtocolsRequest
-import com.medofic.api.data.classes.Enums.AppointmentStatus
+import com.medofic.api.data.classes.Enums.AppointmentRequestStatus
 import com.medofic.api.data.classes.ProtocolFile
 import com.medofic.api.services.PatientService
 import io.swagger.v3.oas.annotations.Operation
@@ -79,10 +79,10 @@ class PatientController(private val patientService: PatientService) {
     fun getAppointments(@RequestBody request: AppointmentRequest): List<Appointment> {
         val appointments = patientService.getAppointmentsBySnils(request.snils)
 
-        return if (request.status == AppointmentStatus.ANY)
+        return if (request.status == AppointmentRequestStatus.ANY)
             appointments
         else
-            appointments.filter { it.status == request.status }
+            appointments.filter { it.status.name == request.status.name }
     }
 
     @Operation(summary = "Set appointment by snils")
