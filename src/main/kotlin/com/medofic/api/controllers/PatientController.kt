@@ -1,12 +1,17 @@
 package com.medofic.api.controllers
 
+import com.medofic.api.data.classes.Appointment
+import com.medofic.api.data.classes.DTO.Requests.AppointmentForDoctorRequest
+import com.medofic.api.data.classes.DTO.Requests.AppointmentRequest
 import com.medofic.api.data.classes.DTO.Requests.ProtocolRequest
 import com.medofic.api.data.classes.DTO.Requests.ProtocolsRequest
+import com.medofic.api.data.classes.Enums.AppointmentStatus
 import com.medofic.api.data.classes.ProtocolFile
 import com.medofic.api.services.PatientService
 import io.swagger.v3.oas.annotations.Operation
 import org.springframework.core.io.FileSystemResource
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -42,12 +47,6 @@ class PatientController(private val patientService: PatientService) {
             .body(resource)
     }
 
-    /**
-     * Getting information about all available protocols in user directory
-     *
-     * @property request body from post request. Must contain snils(format: ddd ddd ddd dd)
-     * @return list with all available protocols
-     */
     @Operation(summary = "Gets info about all protocols")
     @PostMapping("/listProtocols")
     fun getProtocolsInfo(@RequestBody request: ProtocolsRequest): ResponseEntity<MutableList<ProtocolFile>> {
@@ -61,12 +60,6 @@ class PatientController(private val patientService: PatientService) {
             .ok(paginatedProtocols)
     }
 
-    /**
-     * Get a specific protocol in user directory
-     *
-     * @property request body from post request. Must contain snils(format: ddd ddd ddd dd) and fileName
-     * @return file - protocol
-     */
     @Operation(summary = "Get protocol by snils and fileName")
     @PostMapping("/protocol")
     fun getProtocolByName(@RequestBody request: ProtocolRequest): ResponseEntity<FileSystemResource> {
@@ -78,6 +71,28 @@ class PatientController(private val patientService: PatientService) {
             else -> ResponseEntity.ok()
                 .headers(createPdfHeaders(protocol))
                 .body(FileSystemResource(protocol))
+        }
+    }
+
+    @Operation(summary = "Get appointments by snils")
+    @PostMapping("/appointments")
+    fun getAppointments(@RequestBody request: AppointmentRequest): List<Appointment> {
+        val appointments = patientService.getAppointmentsBySnils(request.snils)
+
+        return if (request.status == AppointmentStatus.ANY)
+            appointments
+        else
+            appointments.filter { it.status == request.status }
+    }
+
+    @Operation(summary = "Set appointment by snils")
+    @PostMapping("/setAppointment")
+    fun setAppointment(@RequestBody request:AppointmentForDoctorRequest): ResponseEntity<String> {
+        return try {
+            patientService.setAppointmentBySnils(request.snils, request.appointment)
+            ResponseEntity.ok("Appointment set successfully")
+        } catch (e: Exception) {
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error setting appointment: ${e.message}")
         }
     }
 }
