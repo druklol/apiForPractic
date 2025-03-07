@@ -1,7 +1,6 @@
 package com.medofic.api.services
 
 import com.medofic.api.data.classes.Appointment
-import com.medofic.api.data.classes.DTO.Requests.AppointmentRequest
 import com.medofic.api.data.classes.ProtocolFile
 import com.medofic.api.data.classes.ProtocolInfo
 import kotlinx.serialization.encodeToString
@@ -10,7 +9,6 @@ import org.springframework.stereotype.Service
 import java.io.File
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 @Service
 class PatientService {
@@ -29,6 +27,9 @@ class PatientService {
     fun getAllProtocolsBySnils(snils: String): MutableList<ProtocolFile> {
         val files = findDirectoryBySnils(snils, "protocols").listFiles()
         val protocols: MutableList<ProtocolFile> = mutableListOf()
+
+        if(files.isNullOrEmpty())
+            return protocols
 
         files.forEach { file ->
             if (file.name.startsWith(".")) return@forEach
