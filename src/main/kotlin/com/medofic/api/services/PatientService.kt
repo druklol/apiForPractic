@@ -32,14 +32,15 @@ class PatientService {
             val splittedFileName = file.name.split("_")
 
             val lpu = splittedFileName[0]
-            val doctorName = splittedFileName[1]
+            val investigationName = splittedFileName[1]
+            val doctorName = splittedFileName[2]
 
             val dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy")
-            val date = LocalDate.parse(splittedFileName[2], dateFormatter)
+            val date = LocalDate.parse(splittedFileName[3], dateFormatter)
 
-            val time = splittedFileName[3]
+            val time = splittedFileName[4]
 
-            val protocolInfo = ProtocolInfo(lpu, doctorName, date, time)
+            val protocolInfo = ProtocolInfo(lpu, investigationName, doctorName, date, time)
             val protocolFile = ProtocolFile(file.name, protocolInfo)
 
             protocols.add(protocolFile)
