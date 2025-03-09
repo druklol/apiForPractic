@@ -1,14 +1,14 @@
 package com.medofic.api.controllers
 
 import com.medofic.api.data.classes.Appointment
-import com.medofic.api.data.classes.DTO.Requests.AppointmentForDoctorRequest
-import com.medofic.api.data.classes.DTO.Requests.AppointmentRequest
-import com.medofic.api.data.classes.DTO.Requests.ProtocolRequest
-import com.medofic.api.data.classes.DTO.Requests.ProtocolsRequest
+import com.medofic.api.data.classes.DTO.Requests.*
 import com.medofic.api.data.classes.Enums.AppointmentRequestStatus
+import com.medofic.api.data.classes.Notification
 import com.medofic.api.data.classes.ProtocolFile
 import com.medofic.api.services.PatientService
 import io.swagger.v3.oas.annotations.Operation
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.core.io.FileSystemResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -22,6 +22,7 @@ import java.io.File
 @RestController
 @RequestMapping("api/v1/patient")
 class PatientController(private val patientService: PatientService) {
+    private val logger: Logger = LoggerFactory.getLogger(PatientController::class.java)
 
     private fun createPdfHeaders(resolutionFile: File) = HttpHeaders().apply {
         add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${resolutionFile.name}")
@@ -49,15 +50,15 @@ class PatientController(private val patientService: PatientService) {
 
     @Operation(summary = "Gets info about all protocols")
     @PostMapping("/listProtocols")
-    fun getProtocolsInfo(@RequestBody request: ProtocolsRequest): ResponseEntity<MutableList<ProtocolFile>> {
+    fun getProtocolsInfo(@RequestBody request: ProtocolsRequest): MutableList<ProtocolFile> {
         val protocols = patientService.getAllProtocolsBySnils(request.snils)
 
         val start = (request.page * request.size).coerceAtMost(protocols.size)
         val end = ((request.page + 1) * request.size).coerceAtMost(protocols.size)
         val paginatedProtocols = protocols.subList(start, end)
 
-        return ResponseEntity
-            .ok(paginatedProtocols)
+        logger.info("${request.snils} запросил список протоколов. Результат: $paginatedProtocols")
+        return paginatedProtocols
     }
 
     @Operation(summary = "Get protocol by snils and fileName")
@@ -66,11 +67,17 @@ class PatientController(private val patientService: PatientService) {
         val protocol = patientService.getProtocolFile(request.snils, request.fileName)
 
         return when {
-            protocol == null -> ResponseEntity.badRequest().build()
-            !protocol.exists() -> ResponseEntity.notFound().build()
-            else -> ResponseEntity.ok()
-                .headers(createPdfHeaders(protocol))
-                .body(FileSystemResource(protocol))
+            protocol == null -> {
+                logger.error("${request.snils} запросил протокол ${request.fileName} который не был найден.")
+                ResponseEntity.badRequest().build()
+            }
+
+            else -> {
+                logger.info("${request.snils} запросил протокол ${request.fileName}.")
+                ResponseEntity.ok()
+                    .headers(createPdfHeaders(protocol))
+                    .body(FileSystemResource(protocol))
+            }
         }
     }
 
@@ -79,20 +86,52 @@ class PatientController(private val patientService: PatientService) {
     fun getAppointments(@RequestBody request: AppointmentRequest): List<Appointment> {
         val appointments = patientService.getAppointmentsBySnils(request.snils)
 
-        return if (request.status == AppointmentRequestStatus.ANY)
+        return if (request.status == AppointmentRequestStatus.ANY) {
+            logger.info("${request.snils} запросил общий список приёмов.")
+
             appointments
-        else
+        } else {
+            logger.info("${request.snils} запросил список приёмов c фильтром ${request.status.name}.")
+
             appointments.filter { it.status.name == request.status.name }
+        }
     }
 
-    @Operation(summary = "Set appointment by snils")
-    @PostMapping("/setAppointment")
-    fun setAppointment(@RequestBody request:AppointmentForDoctorRequest): ResponseEntity<String> {
+    @Operation(summary = "Add appointment by snils")
+    @PostMapping("/addAppointment")
+    fun addAppointment(@RequestBody request: AppointmentForDoctorRequest): ResponseEntity<String> {
         return try {
-            patientService.setAppointmentBySnils(request.snils, request.appointment)
-            ResponseEntity.ok("Appointment set successfully")
+            patientService.addAppointmentBySnils(request.snils, request.appointment)
+            logger.info("Пользователю ${request.snils} добавлен приём:${request.appointment}")
+
+            ResponseEntity.ok("Appointment added successfully")
         } catch (e: Exception) {
-            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error setting appointment: ${e.message}")
+            logger.error("Ошибка при добавлении приёма. Ошибка:${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding appointment: ${e.message}")
+        }
+    }
+
+    @Operation(summary = "Get notifications by snils")
+    @PostMapping("/notifications")
+    fun getNotifications(@RequestBody request: AppointmentRequest): MutableList<Notification> {
+        val notificaions = patientService.getNotificationsBySnils(request.snils)
+        logger.info("${request.snils} запросил список уведомлений.")
+
+        return notificaions
+    }
+
+    @Operation(summary = "Add notification by snils")
+    @PostMapping("/addNotification")
+    fun addNotification(@RequestBody request: NotificationRequest): ResponseEntity<String> {
+        return try {
+            patientService.addNotificationBySnils(request.snils, request.notification)
+            logger.info("Пользователю ${request.snils} добавлено уведомление:${request.notification}")
+
+            ResponseEntity.ok("Notification added successfully")
+        }
+        catch (e:Exception){
+            logger.error("Ошибка при добавлении уведомления. Ошибка:${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding appointment: ${e.message}")
         }
     }
 }
