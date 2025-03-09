@@ -132,6 +132,6 @@ class PatientService {
         }
 
         json.add(notification)
-        file.writeText(Json.encodeToString(notification))
+        file.writeText(Json.encodeToString(json))
     }
 }
