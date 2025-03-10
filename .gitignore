@@ -38,3 +38,8 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Project ###
+*.json
+*.pdf
+*.log
