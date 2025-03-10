@@ -113,7 +113,7 @@ class PatientController(private val patientService: PatientService) {
 
     @Operation(summary = "Get notifications by snils")
     @PostMapping("/notifications")
-    fun getNotifications(@RequestBody request: AppointmentRequest): MutableList<Notification> {
+    fun getNotifications(@RequestBody request: SnilsRequest): MutableList<Notification> {
         val notificaions = patientService.getNotificationsBySnils(request.snils)
         logger.info("${request.snils} запросил список уведомлений.")
 
