@@ -1,9 +1,6 @@
 package com.medofic.api.services
 
-import com.medofic.api.data.classes.Appointment
-import com.medofic.api.data.classes.Notification
-import com.medofic.api.data.classes.ProtocolFile
-import com.medofic.api.data.classes.ProtocolInfo
+import com.medofic.api.data.classes.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.springframework.stereotype.Service
@@ -14,11 +11,11 @@ import java.time.format.DateTimeFormatter
 @Service
 class PatientService {
 
-    private fun findDirectoryBySnils(snils: String, subDirectory: String): File {
+    private fun findPatientDirectory(snils: String, subDirectory: String): File {
         return File("./src/main/resources/static/${snils}/${subDirectory}")
     }
 
-    private fun findFileByName(directory: File, fileName: String): File? {
+    private fun findFile(directory: File, fileName: String): File? {
         if (!directory.isDirectory) {
             return null
         }
@@ -38,22 +35,14 @@ class PatientService {
         return file
     }
 
-    fun getResolutionFileBySnils(snils: String): File? {
-        val patientDirectory = findDirectoryBySnils(snils, "")
-
-        val resolution = findFileByName(patientDirectory, "resolution.pdf")
-
-        return resolution
-    }
-
     fun getProtocolFile(snils: String, fileName: String): File? {
-        val patientDirectory = findDirectoryBySnils(snils, "protocols")
+        val patientDirectory = findPatientDirectory(snils, "protocols")
 
-        return findFileByName(patientDirectory, fileName)
+        return findFile(patientDirectory, fileName)
     }
 
-    fun getAllProtocolsBySnils(snils: String): MutableList<ProtocolFile> {
-        val files = findDirectoryBySnils(snils, "protocols").listFiles()
+    fun getAllProtocols(snils: String): MutableList<ProtocolFile> {
+        val files = findPatientDirectory(snils, "protocols").listFiles()
         val protocols: MutableList<ProtocolFile> = mutableListOf()
 
         if (files.isNullOrEmpty())
@@ -81,9 +70,9 @@ class PatientService {
         return protocols
     }
 
-    fun getAppointmentsBySnils(snils: String): List<Appointment> {
-        val directory = findDirectoryBySnils(snils, "")
-        val file = findFileByName(directory, "appointments.json") ?: run {
+    fun getAppointments(snils: String): List<Appointment> {
+        val directory = findPatientDirectory(snils, "")
+        val file = findFile(directory, "appointments.json") ?: run {
             createFile(directory, "appointments.json", "[]")
         }
 
@@ -94,44 +83,76 @@ class PatientService {
         return appointments
     }
 
-    fun addAppointmentBySnils(snils: String, appointment: Appointment) {
-        val directory = findDirectoryBySnils(snils, "")
-        val file = findFileByName(directory, "appointments.json") ?: run {
+    fun addAppointment(snils: String, appointment: Appointment) {
+        val directory = findPatientDirectory(snils, "")
+        val file = findFile(directory, "appointments.json") ?: run {
             createFile(directory, "appointments.json", "[]")
         }
 
-        val json = file.readText().let {
+        val appointments = file.readText().let {
             Json.decodeFromString<MutableList<Appointment>>(it)
         }
 
-        json.add(appointment)
-        file.writeText(Json.encodeToString(json))
+        appointments.add(appointment)
+        file.writeText(Json.encodeToString(appointments))
     }
 
-    fun getNotificationsBySnils(snils: String): MutableList<Notification> {
-        val directory = findDirectoryBySnils(snils, "")
-        val file = findFileByName(directory, "notifications.json") ?: run {
+    fun getNotifications(snils: String): MutableList<Notification> {
+        val directory = findPatientDirectory(snils, "")
+        val file = findFile(directory, "notifications.json") ?: run {
             createFile(directory, "notifications.json", "[]")
         }
 
-        val json = file.readText().let {
+        val notifications = file.readText().let {
             Json.decodeFromString<MutableList<Notification>>(it)
         }
 
-        return json
+        return notifications
     }
 
-    fun addNotificationBySnils(snils: String, notification: Notification) {
-        val directory = findDirectoryBySnils(snils, "")
-        val file = findFileByName(directory, "notifications.json") ?: run {
+    fun addNotification(snils: String, notification: Notification) {
+        val directory = findPatientDirectory(snils, "")
+        val file = findFile(directory, "notifications.json") ?: run {
             createFile(directory, "notifications.json", "[]")
         }
 
-        val json = file.readText().let {
+        val notifications = file.readText().let {
             Json.decodeFromString<MutableList<Notification>>(it)
         }
 
-        json.add(notification)
-        file.writeText(Json.encodeToString(json))
+        notifications.add(notification)
+        file.writeText(Json.encodeToString(notifications))
+    }
+
+    fun getDispensaryObservationsList(snils: String): MutableList<DispensaryObservation> {
+        val directory = findPatientDirectory(snils, "")
+        val file = findFile(directory, "dispensary_observations.json") ?: run {
+            createFile(directory, "dispensary_observations.json", "[]")
+        }
+
+        val observations = file.readText().let {
+            Json.decodeFromString<MutableList<DispensaryObservation>>(it)
+        }
+
+        return observations
+    }
+
+    fun addOrChangeDispensaryObservations(snils: String, newObservation: DispensaryObservation) {
+        val directory = findPatientDirectory(snils, "")
+        val file = findFile(directory, "dispensary_observations.json") ?: run {
+            createFile(directory, "dispensary_observations.json", "[]")
+        }
+
+        val observations = file.readText().let {
+            Json.decodeFromString<MutableList<DispensaryObservation>>(it)
+        }
+
+        observations.removeAll { obs ->
+            obs.LPU == newObservation.LPU && obs.disease == newObservation.disease
+        }
+
+        observations.add(newObservation)
+
+        file.writeText(Json.encodeToString(observations))
     }
 }

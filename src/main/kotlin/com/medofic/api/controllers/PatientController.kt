@@ -2,6 +2,7 @@ package com.medofic.api.controllers
 
 import com.medofic.api.data.classes.Appointment
 import com.medofic.api.data.classes.DTO.Requests.*
+import com.medofic.api.data.classes.DispensaryObservation
 import com.medofic.api.data.classes.Enums.AppointmentRequestStatus
 import com.medofic.api.data.classes.Notification
 import com.medofic.api.data.classes.ProtocolFile
@@ -29,29 +30,10 @@ class PatientController(private val patientService: PatientService) {
         add(HttpHeaders.CONTENT_TYPE, "application/pdf")
     }
 
-    @Operation(summary = "Not used")
-    @PostMapping("/resolution")
-    fun getResolution(@RequestBody request: Map<String, String>): ResponseEntity<FileSystemResource> {
-        val snils = request["snils"] ?: return ResponseEntity.badRequest().build()
-        val resolutionFile = patientService.getResolutionFileBySnils(snils)
-
-        if (resolutionFile?.exists() != true) {
-            return ResponseEntity.notFound().build()
-        }
-        val resource = FileSystemResource(resolutionFile)
-
-        val headers = createPdfHeaders(resolutionFile)
-
-        return ResponseEntity
-            .ok()
-            .headers(headers)
-            .body(resource)
-    }
-
     @Operation(summary = "Gets info about all protocols")
     @PostMapping("/listProtocols")
     fun getProtocolsInfo(@RequestBody request: ProtocolsRequest): MutableList<ProtocolFile> {
-        val protocols = patientService.getAllProtocolsBySnils(request.snils)
+        val protocols = patientService.getAllProtocols(request.snils)
 
         val start = (request.page * request.size).coerceAtMost(protocols.size)
         val end = ((request.page + 1) * request.size).coerceAtMost(protocols.size)
@@ -61,7 +43,7 @@ class PatientController(private val patientService: PatientService) {
         return paginatedProtocols
     }
 
-    @Operation(summary = "Get protocol by snils and fileName")
+    @Operation(summary = "Get protocol")
     @PostMapping("/protocol")
     fun getProtocolByName(@RequestBody request: ProtocolRequest): ResponseEntity<FileSystemResource> {
         val protocol = patientService.getProtocolFile(request.snils, request.fileName)
@@ -81,10 +63,10 @@ class PatientController(private val patientService: PatientService) {
         }
     }
 
-    @Operation(summary = "Get appointments by snils")
+    @Operation(summary = "Get appointments")
     @PostMapping("/appointments")
     fun getAppointments(@RequestBody request: AppointmentRequest): List<Appointment> {
-        val appointments = patientService.getAppointmentsBySnils(request.snils)
+        val appointments = patientService.getAppointments(request.snils)
 
         return if (request.status == AppointmentRequestStatus.ANY) {
             logger.info("${request.snils} запросил общий список приёмов.")
@@ -97,11 +79,11 @@ class PatientController(private val patientService: PatientService) {
         }
     }
 
-    @Operation(summary = "Add appointment by snils")
+    @Operation(summary = "Add appointment")
     @PostMapping("/addAppointment")
     fun addAppointment(@RequestBody request: AppointmentForDoctorRequest): ResponseEntity<String> {
         return try {
-            patientService.addAppointmentBySnils(request.snils, request.appointment)
+            patientService.addAppointment(request.snils, request.appointment)
             logger.info("Пользователю ${request.snils} добавлен приём:${request.appointment}")
 
             ResponseEntity.ok("Appointment added successfully")
@@ -111,23 +93,47 @@ class PatientController(private val patientService: PatientService) {
         }
     }
 
-    @Operation(summary = "Get notifications by snils")
+    @Operation(summary = "Get list of notifications")
     @PostMapping("/notifications")
     fun getNotifications(@RequestBody request: SnilsRequest): MutableList<Notification> {
-        val notificaions = patientService.getNotificationsBySnils(request.snils)
+        val notificaions = patientService.getNotifications(request.snils)
         logger.info("${request.snils} запросил список уведомлений.")
 
         return notificaions
     }
 
-    @Operation(summary = "Add notification by snils")
+    @Operation(summary = "Add notification")
     @PostMapping("/addNotification")
     fun addNotification(@RequestBody request: NotificationRequest): ResponseEntity<String> {
         return try {
-            patientService.addNotificationBySnils(request.snils, request.notification)
+            patientService.addNotification(request.snils, request.notification)
             logger.info("Пользователю ${request.snils} добавлено уведомление:${request.notification}")
 
             ResponseEntity.ok("Notification added successfully")
+        }
+        catch (e:Exception){
+            logger.error("Ошибка при добавлении уведомления. Ошибка:${e.message}")
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding appointment: ${e.message}")
+        }
+    }
+
+    @Operation(summary = "Get list of dispensary observations")
+    @PostMapping("/getObservations")
+    fun getDispensaryObservations(@RequestBody request:SnilsRequest): MutableList<DispensaryObservation> {
+        val observations = patientService.getDispensaryObservationsList(request.snils)
+        logger.info("${request.snils} запросил список диспансерных наблюдений.")
+
+        return observations
+    }
+
+    @Operation(summary = "Add dispensary observation")
+    @PostMapping("/addObservation")
+    fun addObservation(@RequestBody request:DispensaryObservationRequest): ResponseEntity<String> {
+        return try {
+            patientService.addOrChangeDispensaryObservations(request.snils, request.observation)
+            logger.info("Пользователю ${request.snils} добавлено диспансерное наблюдение:${request.observation}")
+
+            ResponseEntity.ok("Dispensary observation added successfully")
         }
         catch (e:Exception){
             logger.error("Ошибка при добавлении уведомления. Ошибка:${e.message}")
