@@ -95,19 +95,19 @@ class PatientController(private val patientService: PatientService) {
 
     @Operation(summary = "Get list of notifications")
     @PostMapping("/notifications")
-    fun getNotifications(@RequestBody request: SnilsRequest): MutableList<Notification> {
-        val notificaions = patientService.getNotifications(request.snils)
+    fun getNotifications(@RequestBody request: SnilsRequest): List<Notification> {
+        val notifications = patientService.getNotifications(request.snils)
         logger.info("${request.snils} запросил список уведомлений.")
 
-        return notificaions
+        return notifications
     }
 
     @Operation(summary = "Add notification")
     @PostMapping("/addNotification")
-    fun addNotification(@RequestBody request: NotificationRequest): ResponseEntity<String> {
+    fun addNotification(@RequestBody notification: Notification): ResponseEntity<String> {
         return try {
-            patientService.addNotification(request.snils, request.notification)
-            logger.info("Пользователю ${request.snils} добавлено уведомление:${request.notification}")
+            patientService.addNotification(notification)
+            logger.info("Пользователю ${notification.snils} добавлено уведомление:${notification}")
 
             ResponseEntity.ok("Notification added successfully")
         }
@@ -118,7 +118,7 @@ class PatientController(private val patientService: PatientService) {
     }
 
     @Operation(summary = "Get list of dispensary observations")
-    @PostMapping("/getObservations")
+    @PostMapping("/observations")
     fun getDispensaryObservations(@RequestBody request:SnilsRequest): MutableList<DispensaryObservation> {
         val observations = patientService.getDispensaryObservationsList(request.snils)
         logger.info("${request.snils} запросил список диспансерных наблюдений.")
@@ -136,7 +136,7 @@ class PatientController(private val patientService: PatientService) {
             ResponseEntity.ok("Dispensary observation added successfully")
         }
         catch (e:Exception){
-            logger.error("Ошибка при добавлении уведомления. Ошибка:${e.message}")
+            logger.error("Ошибка при добавлении диспансерного наблюдения. Ошибка:${e.message}")
             ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error adding appointment: ${e.message}")
         }
     }

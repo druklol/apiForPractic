@@ -1,6 +1,7 @@
 package com.medofic.api.services
 
 import com.medofic.api.data.classes.*
+import com.medofic.api.data.classes.Repositories.NotificationRepository
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.springframework.stereotype.Service
@@ -9,7 +10,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Service
-class PatientService {
+class PatientService(private val notificationRepository: NotificationRepository) {
 
     private fun findPatientDirectory(snils: String, subDirectory: String): File {
         return File("./src/main/resources/static/${snils}/${subDirectory}")
@@ -97,32 +98,9 @@ class PatientService {
         file.writeText(Json.encodeToString(appointments))
     }
 
-    fun getNotifications(snils: String): MutableList<Notification> {
-        val directory = findPatientDirectory(snils, "")
-        val file = findFile(directory, "notifications.json") ?: run {
-            createFile(directory, "notifications.json", "[]")
-        }
+    fun getNotifications(snils:String) = notificationRepository.findBySnils(snils)
 
-        val notifications = file.readText().let {
-            Json.decodeFromString<MutableList<Notification>>(it)
-        }
-
-        return notifications
-    }
-
-    fun addNotification(snils: String, notification: Notification) {
-        val directory = findPatientDirectory(snils, "")
-        val file = findFile(directory, "notifications.json") ?: run {
-            createFile(directory, "notifications.json", "[]")
-        }
-
-        val notifications = file.readText().let {
-            Json.decodeFromString<MutableList<Notification>>(it)
-        }
-
-        notifications.add(notification)
-        file.writeText(Json.encodeToString(notifications))
-    }
+    fun addNotification(notification: Notification) = notificationRepository.save(notification)
 
     fun getDispensaryObservationsList(snils: String): MutableList<DispensaryObservation> {
         val directory = findPatientDirectory(snils, "")
