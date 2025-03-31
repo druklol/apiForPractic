@@ -10,6 +10,7 @@ import com.medofic.api.services.PatientService
 import io.swagger.v3.oas.annotations.Operation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.FileSystemResource
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
@@ -22,7 +23,7 @@ import java.io.File
 
 @RestController
 @RequestMapping("api/v1/patient")
-class PatientController(private val patientService: PatientService) {
+class PatientController(@Autowired private val patientService: PatientService) {
     private val logger: Logger = LoggerFactory.getLogger(PatientController::class.java)
 
     private fun createPdfHeaders(resolutionFile: File) = HttpHeaders().apply {
