@@ -2,6 +2,7 @@ package com.medofic.api.data.classes
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.medofic.api.data.classes.Enums.Gender
+import com.medofic.api.data.classes.Enums.UserRole
 import jakarta.persistence.*
 import jakarta.validation.constraints.Pattern
 import java.time.LocalDate
@@ -11,7 +12,7 @@ import java.time.LocalDate
 data class User (
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonIgnore
-    val id: Long? = null,
+    val id: Long = 0,
     @field:Pattern(regexp = "^\\d{3} \\d{3} \\d{3} \\d{2}$", message = "СНИЛС должен быть в формате ddd ddd ddd dd")
     @Column(unique = true)
     val snils:String,
@@ -22,5 +23,11 @@ data class User (
     val address:String,
     val height:Int,
     val phoneNumber:String,
-    val bloodGroup:String
+    val bloodGroup:String,
+    val role: UserRole = UserRole.USER,
+    val dateOfBirth: LocalDate,
+    @JsonIgnore
+    var isOnline: Boolean = false,
+    @JsonIgnore
+    var activeChatsCount: Int = 0
 )
