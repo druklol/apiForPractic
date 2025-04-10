@@ -1,10 +1,12 @@
 plugins {
-	kotlin("jvm") version "1.9.25"
-	kotlin("plugin.spring") version "1.9.25"
-	kotlin("plugin.serialization") version "1.9.25"
+	val kotlinVersion = "2.1.20"
+
+	kotlin("jvm") version kotlinVersion
+	kotlin("plugin.spring") version kotlinVersion
+	kotlin("plugin.serialization") version kotlinVersion
 	id("org.springframework.boot") version "3.4.2"
 	id("io.spring.dependency-management") version "1.1.7"
-	kotlin("plugin.jpa") version "1.9.25"
+	kotlin("plugin.jpa") version kotlinVersion
 }
 
 group = "com.medofic"
@@ -38,6 +40,13 @@ dependencies {
 	//Database
 	runtimeOnly("org.mariadb.jdbc:mariadb-java-client")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+
+	//ktor
+	implementation("io.ktor:ktor-client-core:3.1.2")
+
+	//spring websocket
+	implementation("org.springframework.boot:spring-boot-starter-websocket")
+	implementation("org.springframework.boot:spring-boot-starter-actuator")
 }
 
 kotlin {
