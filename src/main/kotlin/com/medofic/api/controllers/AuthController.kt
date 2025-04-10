@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -19,13 +20,13 @@ class AuthController(@Autowired private val authService: AuthService) {
 
     @Operation(summary = "Get info about user")
     @PostMapping("/login")
-    private fun getUserInfo(snils: SnilsRequest): ResponseEntity<User> {
+    private fun getUserInfo(@RequestBody snils: SnilsRequest): ResponseEntity<User> {
         logger.info("Попытка входа со снилсом ${snils.snils}")
+
         val user = authService.findUser(snils.snils)
         println(user)
         if (user == null) {
             logger.info("Пользователь со снилсом ${snils.snils} не найден")
-
             return ResponseEntity.badRequest().build()
         }
         logger.info("Вход со снилсом ${snils.snils} выполнен")
@@ -34,7 +35,8 @@ class AuthController(@Autowired private val authService: AuthService) {
 
     @Operation(summary = "Register user")
     @PostMapping("/register")
-    private fun registerUser(user: User): ResponseEntity<String> {
+    private fun registerUser(@RequestBody user: User): ResponseEntity<String> {
+        logger.info("CHECK$user")
         logger.info("Регистрация пользователя с снилсом: ${user.snils}")
         if (authService.findUser(user.snils) != null)
             return ResponseEntity.badRequest().body("User with ${user.snils} already exists")
