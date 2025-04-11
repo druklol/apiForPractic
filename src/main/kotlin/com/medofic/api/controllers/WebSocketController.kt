@@ -8,6 +8,8 @@ import com.medofic.api.data.classes.Chat.Requests.ConnectRequest
 import com.medofic.api.data.classes.Chat.Requests.CreateChatRequest
 import com.medofic.api.data.classes.DTO.Chat.MessageDTO
 import com.medofic.api.data.classes.Enums.NotificationType
+import com.medofic.api.data.classes.Enums.UserRole
+import com.medofic.api.data.classes.Repositories.UserRepository
 import com.medofic.api.services.ChatService
 import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.MessageMapping
@@ -22,6 +24,7 @@ import java.time.LocalDateTime
 class WebSocketController(
     private val chatService: ChatService,
     private val messagingTemplate: DebugMessagingTemplateDecorator,
+    private val userRepository: UserRepository
 ) {
     val logger = LoggerFactory.getLogger(WebSocketController::class.java)
     @MessageMapping("/chat.connect")
@@ -29,6 +32,30 @@ class WebSocketController(
         val userId = connectRequest.userId
         headerAccessor.sessionAttributes?.put("userId", userId)
         logger.info("User $userId connected")
+
+        val user = userRepository.findById(userId).orElse(null) ?: return
+
+        user.isOnline = true
+        userRepository.save(user)
+
+        if (user.role == UserRole.ADMIN) {
+            val chats = chatService.getAdminActiveChats(userId)
+
+            for (chat in chats) {
+                val notification = ChatNotification(
+                    type = NotificationType.ADMIN_CONNECTED,
+                    chatId = chat.id,
+                    adminId = user.id,
+                    adminUsername = user.fullName
+                )
+
+                messagingTemplate.convertAndSendToUser(
+                    chat.user.id.toString(),
+                    "/queue/notifications",
+                    notification
+                )
+            }
+        }
     }
 
     @MessageMapping("/chat.sendMessage")
