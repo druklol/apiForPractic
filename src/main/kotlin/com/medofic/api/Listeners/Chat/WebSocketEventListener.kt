@@ -8,12 +8,9 @@ import com.medofic.api.data.classes.Repositories.UserRepository
 import com.medofic.api.services.ChatService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.event.EventListener
-import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor
 import org.springframework.stereotype.Component
-import org.springframework.web.socket.messaging.SessionConnectedEvent
 import org.springframework.web.socket.messaging.SessionDisconnectEvent
-import java.time.LocalDateTime
 
 @Component
 class WebSocketEventListener {

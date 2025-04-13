@@ -15,9 +15,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.Payload
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor
-import org.springframework.messaging.simp.user.SimpUserRegistry
 import org.springframework.stereotype.Controller
-import java.security.Principal
 import java.time.LocalDateTime
 
 @Controller
