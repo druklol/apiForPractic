@@ -11,7 +11,6 @@ import java.time.LocalDate
 @Table(name = "Users")
 data class User (
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @JsonIgnore
     val id: Long = 0,
     @field:Pattern(regexp = "^\\d{3} \\d{3} \\d{3} \\d{2}$", message = "СНИЛС должен быть в формате ddd ddd ddd dd")
     @Column(unique = true)
@@ -28,6 +27,5 @@ data class User (
     val dateOfBirth: LocalDate,
     @JsonIgnore
     var isOnline: Boolean = false,
-    @JsonIgnore
     var activeChatsCount: Int = 0
 )
